@@ -44,7 +44,7 @@ instance; further elements must be class names or classes."
                   (mapcar #'%find-class class-list)))))
 
 (defun mix (&rest classes)
-  (make-mix-list :list (remove-duplicates (mapcar #'%find-class classes))))
+  (make-mix-list :list (remove-duplicates (mapcar #'%find-class classes) :from-end t)))
 
 (defun define-mixin (mix-list)
   (setf (gethash (mix-list-list mix-list) *dynamic-mix-classes*)
