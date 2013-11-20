@@ -48,7 +48,7 @@ classes as direct superclasses.
 `ENSURE-MIX` *prepends* classes in the order specified.  (Originally,
 it appended classes.)  This is simply more useful in practice:
 
-```list
+```lisp
 (defclass general-object () ())
 (defclass specializing-mixin () ())
 
