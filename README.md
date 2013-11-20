@@ -12,7 +12,7 @@ Dynamic-mixins is for simple, dynamic class combination:
 (make-instance (mix 'a 'b)) ;; => #<MIXIN-OBJECT (A B)>
 
 (let ((a (make-instance 'a)))
-  (ensure-mix a 'b 'c)      ;; => #<MIXIN-OBJECT (A B C)>
+  (ensure-mix a 'b 'c)      ;; => #<MIXIN-OBJECT (B C A)>
   (delete-from-mix a 'a)    ;; => #<MIXIN-OBJECT (B C)>
   (delete-from-mix a 'c))   ;; => #<B>
 ```
@@ -40,11 +40,39 @@ defining many permutations.
 
 ## Notes
 
-Order matters; you are defining a new class which has the specified
-classes as direct superclasses.  `ENSURE-MIX` appends classes.
+### Order and Precedence
 
-It is possible to produce errors that may be difficult to recover
-from, if you violate CLOS precedence rules.  This is because CLOS (at
-least on SBCL and CCL, tested) keeps a reference to offending
-anonymous classes, but provides no way for code to get a reference or
-handle this.
+Order matters; you are defining a new class which has the specified
+classes as direct superclasses.
+
+`ENSURE-MIX` *prepends* classes in the order specified.  (Originally,
+it appended classes.)  This is simply more useful in practice:
+
+```list
+(defclass general-object () ())
+(defclass specializing-mixin () ())
+
+(defgeneric some-operation (x))
+
+(defmethod some-operation (x)
+   "Handle the general case"
+   ...)
+
+(defmethod some-operation ((x specializing-mixin))
+   "Handle the case for SPECIALIZING-MIXIN"
+   ...)
+
+(let ((x (make-instance 'general-object)))
+  (ensure-mix x 'specializing-mixin)
+  (some-operation x))
+```
+
+If `SPECIALIZING-MIXIN` were appended, the method which specialized on
+it would never be called.  In practice, this defeats the point.
+Therefore, mixins now get precedence.
+
+### Errors
+
+Errors regarding precendence and circularity are now handled, or
+rather, causing such an error will not produce a nearly-unrecoverable
+situation.  Now you will just get an error.

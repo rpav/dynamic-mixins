@@ -34,24 +34,33 @@
   "Create a MIX-LIST for MAKE-INSTANCE.  The first element may be an
 instance; further elements must be class names or classes."
   (let ((class0 (typecase object-or-class
-                  (symbol (find-class object-or-class))
-                  (class object-or-class)
-                  (t (if (typep 'mixin-class (class-of object-or-class))
-                         (slot-value (class-of object-or-class) 'classes)
-                         (class-of object-or-class))))))
+                  (symbol (list (find-class object-or-class)))
+                  (mixin-object
+                   (slot-value (class-of object-or-class) 'classes))
+                  (t (list (class-of object-or-class))))))
     (make-mix-list
-     :list (list* class0
-                  (mapcar #'%find-class class-list)))))
+     :list (remove-duplicates
+            (append (mapcar #'%find-class class-list)
+                    class0)))))
 
 (defun mix (&rest classes)
-  (make-mix-list :list (remove-duplicates (mapcar #'%find-class classes) :from-end t)))
+  (make-mix-list :list (remove-duplicates (mapcar #'%find-class classes))))
+
+(defun set-superclasses (class list)
+  (reinitialize-instance class :direct-superclasses list))
 
 (defun define-mixin (mix-list)
-  (setf (gethash (mix-list-list mix-list) *dynamic-mix-classes*)
-        (make-instance 'mixin-class
-          :direct-superclasses (list* (find-class 'mixin-object)
-                                      (mix-list-list mix-list))
-          :classes (mix-list-list mix-list))))
+  (let ((new-class (make-instance 'mixin-class
+                     :classes (mix-list-list mix-list))))
+    (handler-case
+        (progn
+          (set-superclasses new-class (list* (find-class 'mixin-object)
+                                             (mix-list-list mix-list))))
+      (error (e)
+        (set-superclasses new-class nil)
+        (error e)))
+    (setf (gethash (mix-list-list mix-list) *dynamic-mix-classes*)
+          new-class)))
 
 (defun ensure-mixin (mix-list)
   (if (cdr (mix-list-list mix-list))
@@ -72,7 +81,7 @@ instance; further elements must be class names or classes."
              (new-classes (remove-if (lambda (x) (member (%find-class x) classes))
                                      old-classes))
              (new-class (if (cdr new-classes)
-                            (ensure-mixin (apply #'%mix new-classes))
+                            (ensure-mixin (apply #'mix new-classes))
                             (car new-classes))))
         (change-class object new-class))
       object))
