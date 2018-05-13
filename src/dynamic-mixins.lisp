@@ -15,7 +15,7 @@
               (mapcar #'class-name classes)))))
 
 (defclass mixin-object () ())
-(defmethod print-object ((o mixin-object) s)
+#-disable-mixin-object-print-object(defmethod print-object ((o mixin-object) s)
   (let ((c (class-of o)))
     (with-slots (classes) c
       (print-unreadable-object (o s :identity t)
