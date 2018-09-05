@@ -14,6 +14,8 @@
               (or (class-name o) 'mixin-class)
               (mapcar #'class-name classes)))))
 
+(defclass mixin-object () ())
+
 (defstruct mix-list (list nil))
 
 (defun %find-class (name-or-class)
