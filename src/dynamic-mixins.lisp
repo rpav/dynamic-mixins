@@ -67,6 +67,14 @@ instance; further elements must be class names or classes."
   (let ((new-class (ensure-mixin (apply #'%mix object classes))))
     (change-class object new-class)))
 
+(defun add-mixin (object mixin-class &rest initargs)
+  "Adds a single mixin to the object and allows to pass initargs
+   the same way as make-instance does."
+  (let ((new-class (ensure-mixin
+                    (funcall #'%mix
+                             object mixin-class))))
+    (apply #'change-class object new-class initargs)))
+
 (defun delete-from-mix (object &rest classes)
   (if (typep object 'mixin-object)
       (let* ((classes (mapcar #'%find-class classes))
